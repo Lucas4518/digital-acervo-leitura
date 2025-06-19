@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Users, Target, Lightbulb, Star, ShoppingCart, Calendar, LogOut, User, Moon, Sun, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,8 +11,8 @@ const BibliotecaDigital = () => {
   const [activeSection, setActiveSection] = useState('inicio');
   const [isDarkTheme, setIsDarkTheme] = useState(false);
   const [userStats, setUserStats] = useState({
-    livrosLidos: 12,
-    livrosComprados: 8
+    livrosLidos: 0,
+    livrosComprados: 0
   });
   const { user, logout } = useAuth();
 
@@ -81,6 +80,42 @@ const BibliotecaDigital = () => {
       precoAluguel: "R$ 6,90",
       precoCompra: "R$ 29,90",
       rating: 4.6
+    },
+    {
+      id: 5,
+      titulo: "O Cortiço",
+      autor: "Aluísio Azevedo",
+      categoria: "Naturalismo",
+      precoAluguel: "R$ 4,50",
+      precoCompra: "R$ 18,90",
+      rating: 4.5
+    },
+    {
+      id: 6,
+      titulo: "Orgulho e Preconceito",
+      autor: "Jane Austen",
+      categoria: "Romance Clássico",
+      precoAluguel: "R$ 5,50",
+      precoCompra: "R$ 22,90",
+      rating: 4.8
+    },
+    {
+      id: 7,
+      titulo: "O Senhor dos Anéis",
+      autor: "J.R.R. Tolkien",
+      categoria: "Fantasia",
+      precoAluguel: "R$ 7,90",
+      precoCompra: "R$ 34,90",
+      rating: 4.9
+    },
+    {
+      id: 8,
+      titulo: "Memórias Póstumas de Brás Cubas",
+      autor: "Machado de Assis",
+      categoria: "Clássico Brasileiro",
+      precoAluguel: "R$ 4,90",
+      precoCompra: "R$ 20,90",
+      rating: 4.7
     }
   ];
 
