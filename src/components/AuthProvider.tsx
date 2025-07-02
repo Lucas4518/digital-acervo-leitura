@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
@@ -9,8 +10,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, senha: string) => boolean;
-  cadastrar: (nome: string, email: string, senha: string) => boolean;
+  login: (email: string, senha: string) => Promise<boolean>;
+  cadastrar: (nome: string, email: string, senha: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -22,7 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Verificar se há usuário logado no localStorage
+    // Verificar se há usuário logado no localStorage (mantendo compatibilidade)
     const userData = localStorage.getItem('bibliotecaUser');
     if (userData) {
       const parsedUser = JSON.parse(userData);
@@ -31,40 +32,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const cadastrar = (nome: string, email: string, senha: string): boolean => {
-    // Verificar se já existe um usuário com esse email
-    const usuarios = JSON.parse(localStorage.getItem('bibliotecaUsuarios') || '[]');
-    const usuarioExistente = usuarios.find((u: any) => u.email === email);
-    
-    if (usuarioExistente) {
-      return false; // Email já cadastrado
+  const cadastrar = async (nome: string, email: string, senha: string): Promise<boolean> => {
+    try {
+      // Verificar se já existe um usuário com esse email
+      const { data: existingUsers, error: selectError } = await supabase
+        .from('Usuarios')
+        .select('*')
+        .eq('user', email);
+
+      if (selectError) {
+        console.error('Erro ao verificar usuário existente:', selectError);
+        return false;
+      }
+
+      if (existingUsers && existingUsers.length > 0) {
+        return false; // Email já cadastrado
+      }
+
+      // Criar novo usuário
+      const { data, error } = await supabase
+        .from('Usuarios')
+        .insert([
+          {
+            user: email,
+            senha: parseInt(senha) // Convertendo para número conforme o schema
+          }
+        ])
+        .select();
+
+      if (error) {
+        console.error('Erro ao cadastrar usuário:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erro no cadastro:', error);
+      return false;
     }
-
-    // Criar novo usuário
-    const novoUsuario = {
-      id: Date.now().toString(),
-      nome,
-      email,
-      senha
-    };
-
-    usuarios.push(novoUsuario);
-    localStorage.setItem('bibliotecaUsuarios', JSON.stringify(usuarios));
-    return true;
   };
 
-  const login = (email: string, senha: string): boolean => {
-    const usuarios = JSON.parse(localStorage.getItem('bibliotecaUsuarios') || '[]');
-    const usuario = usuarios.find((u: any) => u.email === email && u.senha === senha);
-    
-    if (usuario) {
-      const userData = { id: usuario.id, nome: usuario.nome, email: usuario.email };
-      setUser(userData);
-      setIsAuthenticated(true);
-      localStorage.setItem('bibliotecaUser', JSON.stringify(userData));
-      return true;
+  const login = async (email: string, senha: string): Promise<boolean> => {
+    try {
+      const { data: usuarios, error } = await supabase
+        .from('Usuarios')
+        .select('*')
+        .eq('user', email)
+        .eq('senha', parseInt(senha));
+
+      if (error) {
+        console.error('Erro no login:', error);
+        return false;
+      }
+
+      if (usuarios && usuarios.length > 0) {
+        const usuario = usuarios[0];
+        const userData = { 
+          id: usuario.id.toString(), 
+          nome: usuario.user.split('@')[0], // Usando parte do email como nome
+          email: usuario.user 
+        };
+        
+        setUser(userData);
+        setIsAuthenticated(true);
+        localStorage.setItem('bibliotecaUser', JSON.stringify(userData));
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Erro no login:', error);
+      return false;
     }
-    return false;
   };
 
   const logout = () => {

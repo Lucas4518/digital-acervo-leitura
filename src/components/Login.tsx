@@ -15,9 +15,10 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onSwitchToCadastro }) => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !senha) {
@@ -29,19 +30,31 @@ const Login: React.FC<LoginProps> = ({ onSwitchToCadastro }) => {
       return;
     }
 
-    const loginSuccess = login(email, senha);
+    setIsLoading(true);
     
-    if (loginSuccess) {
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo à Biblioteca Digital!",
-      });
-    } else {
+    try {
+      const loginSuccess = await login(email, senha);
+      
+      if (loginSuccess) {
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo à Biblioteca Digital!",
+        });
+      } else {
+        toast({
+          title: "Erro no login",
+          description: "Email ou senha incorretos.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
       toast({
         title: "Erro no login",
-        description: "Email ou senha incorretos.",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -68,6 +81,7 @@ const Login: React.FC<LoginProps> = ({ onSwitchToCadastro }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
+                disabled={isLoading}
               />
             </div>
 
@@ -80,14 +94,16 @@ const Login: React.FC<LoginProps> = ({ onSwitchToCadastro }) => {
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 className="w-full"
+                disabled={isLoading}
               />
             </div>
 
             <Button 
               type="submit" 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+              disabled={isLoading}
             >
-              Entrar
+              {isLoading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
 
@@ -97,6 +113,7 @@ const Login: React.FC<LoginProps> = ({ onSwitchToCadastro }) => {
               <button
                 onClick={onSwitchToCadastro}
                 className="text-blue-600 hover:text-blue-700 font-medium"
+                disabled={isLoading}
               >
                 Cadastre-se aqui
               </button>

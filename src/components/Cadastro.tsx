@@ -16,9 +16,10 @@ const Cadastro: React.FC<CadastroProps> = ({ onSwitchToLogin }) => {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { cadastrar } = useAuth();
 
-  const handleCadastro = (e: React.FormEvent) => {
+  const handleCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!nome || !email || !senha) {
@@ -30,26 +31,48 @@ const Cadastro: React.FC<CadastroProps> = ({ onSwitchToLogin }) => {
       return;
     }
 
-    const cadastroSuccess = cadastrar(nome, email, senha);
-    
-    if (cadastroSuccess) {
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Agora você pode fazer login com suas credenciais.",
-      });
-      setNome('');
-      setEmail('');
-      setSenha('');
-      // Redirecionar para login após sucesso
-      setTimeout(() => {
-        onSwitchToLogin();
-      }, 2000);
-    } else {
+    // Validar se a senha é numérica (conforme schema do banco)
+    if (!/^\d+$/.test(senha)) {
       toast({
         title: "Erro no cadastro",
-        description: "Este email já está em uso. Tente outro.",
+        description: "A senha deve conter apenas números.",
         variant: "destructive"
       });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const cadastroSuccess = await cadastrar(nome, email, senha);
+      
+      if (cadastroSuccess) {
+        toast({
+          title: "Cadastro realizado com sucesso!",
+          description: "Agora você pode fazer login com suas credenciais.",
+        });
+        setNome('');
+        setEmail('');
+        setSenha('');
+        // Redirecionar para login após sucesso
+        setTimeout(() => {
+          onSwitchToLogin();
+        }, 2000);
+      } else {
+        toast({
+          title: "Erro no cadastro",
+          description: "Este email já está em uso. Tente outro.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro no cadastro",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,6 +99,7 @@ const Cadastro: React.FC<CadastroProps> = ({ onSwitchToLogin }) => {
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 className="w-full"
+                disabled={isLoading}
               />
             </div>
 
@@ -88,26 +112,29 @@ const Cadastro: React.FC<CadastroProps> = ({ onSwitchToLogin }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
+                disabled={isLoading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="senha">Senha</Label>
+              <Label htmlFor="senha">Senha (apenas números)</Label>
               <Input
                 id="senha"
                 type="password"
-                placeholder="Digite uma senha segura"
+                placeholder="Digite uma senha numérica"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 className="w-full"
+                disabled={isLoading}
               />
             </div>
 
             <Button 
               type="submit" 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+              disabled={isLoading}
             >
-              Cadastrar
+              {isLoading ? "Cadastrando..." : "Cadastrar"}
             </Button>
           </form>
 
@@ -117,6 +144,7 @@ const Cadastro: React.FC<CadastroProps> = ({ onSwitchToLogin }) => {
               <button
                 onClick={onSwitchToLogin}
                 className="text-blue-600 hover:text-blue-700 font-medium"
+                disabled={isLoading}
               >
                 Faça login aqui
               </button>
